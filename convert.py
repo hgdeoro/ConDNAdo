@@ -14,29 +14,25 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import time
+
 from multiprocessing import Process, Queue
 from Queue import Empty
-import time
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 
 from Bio import SeqIO
 
-class ConversorProcess(Process):
-    def __init__(self, input_filename, input_format, output_filename, output_format, *args, **kwargs):
-        Process.__init__(self, *args, **kwargs)
-        self.count = None
-        self.exc = None
-        self.input_filename = input_filename
-        self.input_format = input_format
-        self.output_filename = output_filename
-        self.output_format = output_format
-    
-    def run(self):
-        try:
-            self.count = SeqIO.convert(self.input_filename, self.input_format, self.output_filename, self.output_format)
-        except Exception, e:
-            self.exc = e
+def convertir_archivos(input_filename, input_format, output_filename, output_format, conv_process_queue):
+    try:
+        logging.info("Iniciando conversion...")
+        count = SeqIO.convert(input_filename, input_format, output_filename, output_format)
+        logging.info("Conversion finalizada!")
+        conv_process_queue.put("OK")
+    except Exception, e:
+        logging.error("Excepcion detectada al intentar conversion")
+        conv_process_queue.put("ERROR: %s" % str(e))
 
 class TkFileDialog(Tkinter.Frame):
 
@@ -77,8 +73,8 @@ class TkFileDialog(Tkinter.Frame):
 
     def render_status(self, text=""):
         if not text:
-            input_format = self.input_format_widget.get(1.0, Tkinter.END)
-            output_format = self.output_format_widget.get(1.0, Tkinter.END)
+            input_format = self.get_input_format()
+            output_format = self.get_output_format()
             widget_text = \
 """Archivo de entrada: %s
 Formato de entrada: %s
@@ -101,14 +97,22 @@ Formato de salida: %s
     def select_output_file(self):
         self.output_filename = tkFileDialog.asksaveasfilename(**self.file_opt)
         self.render_status()
+    
+    def get_input_format(self):
+        input_format = self.input_format_widget.get(1.0, Tkinter.END)
+        return input_format.splitlines()[0].strip()
 
+    def get_output_format(self):
+        output_format = self.output_format_widget.get(1.0, Tkinter.END)
+        return output_format.splitlines()[0].strip()
+    
     def convertir(self):
         if not self.input_filename or not self.output_filename:
             tkMessageBox.showerror("Conversion", "Falta seleccionar el archivo de entrada o salida")
             return
         
-        input_format = self.input_format_widget.get(1.0, Tkinter.END)
-        output_format = self.output_format_widget.get(1.0, Tkinter.END)
+        input_format = self.get_input_format()
+        output_format = self.get_output_format()
         if not input_format or not output_format:
             tkMessageBox.showerror("Conversion", "Falta seleccionar el formato de entrada o salida")
             return
@@ -117,24 +121,31 @@ Formato de salida: %s
         
         conv_process_queue = Queue()
         
-        conv_process = ConversorProcess(self.input_filename, input_format, self.output_filename, output_format,
-            args=(conv_process_queue, ))
+        
+        conv_process = Process(target=convertir_archivos, args=(self.input_filename, input_format,
+            self.output_filename, output_format, conv_process_queue, ))
         conv_process.daemon = True
         conv_process.start()
+        
+        logging.info("ConversorProcess start()'eado")
         
         self.render_status("Conversion en proceso...")
         
         while True:
+            logging.debug("En bucle...")
             try:
                 ret = conv_process_queue.get(False)
+                logging.info("Saliendo de bucle...")
                 break
             except Empty:
-                pass
-            self.update_idletasks()
-            time.sleep(0.5) # 0.5 seg.
+                self.update_idletasks()
+                time.sleep(0.5) # 0.5 seg.
         
+        logging.info("Haciendo join()")
         conv_process.join()
-        print "ret: %r" % ret
+        
+        logging.info("join() OK")
+        self.render_status("PROCESO FINALIZADO\n\nResultado: %r" % ret)
         
         #        if conv_process.ext:
         #            self.render_status("Error detectado al intentar conversion")
@@ -142,6 +153,7 @@ Formato de salida: %s
         #            self.render_status("TERMINADO! Se convirtieron %d registros" % conv_process.count)
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     root = Tkinter.Tk()
     TkFileDialog(root).pack()
     root.mainloop()
