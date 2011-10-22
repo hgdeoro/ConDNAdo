@@ -14,10 +14,28 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import threading
+import time
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 
 from Bio import SeqIO
+
+class ConversorThread(threading.Thread):
+    def __init__(self, input_filename, input_format, output_filename, output_format, *args, **kwargs):
+        threading.Thread.__init__(self, *args, **kwargs)
+        self.count = None
+        self.exc = None
+        self.input_filename = input_filename
+        self.input_format = input_format
+        self.output_filename = output_filename
+        self.output_format = output_format
+    
+    def run(self):
+        try:
+            self.count = SeqIO.convert(self.input_filename, self.input_format, self.output_filename, self.output_format)
+        except Exception, e:
+            self.exc = e
 
 class TkFileDialog(Tkinter.Frame):
 
@@ -87,13 +105,30 @@ Formato de salida: %s
         if not self.input_filename or not self.output_filename:
             tkMessageBox.showerror("Conversion", "Falta seleccionar el archivo de entrada o salida")
             return
-        if not self.input_format_widget.get(1.0, Tkinter.END) or not self.output_format_widget.get(1.0, Tkinter.END):
+        
+        input_format = self.input_format_widget.get(1.0, Tkinter.END)
+        output_format = self.output_format_widget.get(1.0, Tkinter.END)
+        if not input_format or not output_format:
             tkMessageBox.showerror("Conversion", "Falta seleccionar el formato de entrada o salida")
             return
-        self.render_status("Convertido OK")
+
+        self.render_status("Iniciando conversion...")
+        
+        conv_thread = ConversorThread(self.input_filename, input_format, self.output_filename, output_format)
+        conv_thread.daemon = True
+        conv_thread.start()
+        
+        self.render_status("Conversion en proceso...")
+        while conv_thread.is_alive:
+            time.sleep(1) # 1 seg.
+        
+        conv_thread.join()
+        if conv_thread.ext:
+            self.render_status("Error detectado al intentar conversion")
+        else:
+            self.render_status("TERMINADO! Se convirtieron %d registros" % conv_thread.count)
 
 if __name__ == '__main__':
     root = Tkinter.Tk()
     TkFileDialog(root).pack()
     root.mainloop()
-    
