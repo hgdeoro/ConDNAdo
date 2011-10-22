@@ -14,16 +14,17 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import threading
+from multiprocessing import Process, Queue
+from Queue import Empty
 import time
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 
 from Bio import SeqIO
 
-class ConversorThread(threading.Thread):
+class ConversorProcess(Process):
     def __init__(self, input_filename, input_format, output_filename, output_format, *args, **kwargs):
-        threading.Thread.__init__(self, *args, **kwargs)
+        Process.__init__(self, *args, **kwargs)
         self.count = None
         self.exc = None
         self.input_filename = input_filename
@@ -114,19 +115,31 @@ Formato de salida: %s
 
         self.render_status("Iniciando conversion...")
         
-        conv_thread = ConversorThread(self.input_filename, input_format, self.output_filename, output_format)
-        conv_thread.daemon = True
-        conv_thread.start()
+        conv_process_queue = Queue()
+        
+        conv_process = ConversorProcess(self.input_filename, input_format, self.output_filename, output_format,
+            args=(conv_process_queue, ))
+        conv_process.daemon = True
+        conv_process.start()
         
         self.render_status("Conversion en proceso...")
-        while conv_thread.is_alive:
-            time.sleep(1) # 1 seg.
         
-        conv_thread.join()
-        if conv_thread.ext:
-            self.render_status("Error detectado al intentar conversion")
-        else:
-            self.render_status("TERMINADO! Se convirtieron %d registros" % conv_thread.count)
+        while True:
+            try:
+                ret = conv_process_queue.get(False)
+                break
+            except Empty:
+                pass
+            self.update_idletasks()
+            time.sleep(0.5) # 0.5 seg.
+        
+        conv_process.join()
+        print "ret: %r" % ret
+        
+        #        if conv_process.ext:
+        #            self.render_status("Error detectado al intentar conversion")
+        #        else:
+        #            self.render_status("TERMINADO! Se convirtieron %d registros" % conv_process.count)
 
 if __name__ == '__main__':
     root = Tkinter.Tk()
