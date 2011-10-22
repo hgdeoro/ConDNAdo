@@ -21,53 +21,54 @@ from Bio import SeqIO
 
 class TkFileDialog(Tkinter.Frame):
 
-  def __init__(self, root):
+    def __init__(self, root):
+        
+        Tkinter.Frame.__init__(self, root)
+        button_opt = {'fill': Tkconstants.BOTH, 'padx': 5, 'pady': 5}
+        
+        Tkinter.Label(self, text="Formato de entrada").pack(**button_opt)
+        Tkinter.Text(self, height=1).pack(**button_opt)
+        Tkinter.Button(self, text='Seleccion archivo de origen', command=self.select_input_file).pack(**button_opt)
+        
+        Tkinter.Label(self, text="Formato de salida").pack(**button_opt)
+        Tkinter.Text(self, height=1).pack(**button_opt)
+        Tkinter.Button(self, text='Seleccion archivo destino', command=self.select_output_file).pack(**button_opt)
+        
+        Tkinter.Button(self, text="Convertir", command=self.convertir).pack(**button_opt)
+        
+        self.status = Tkinter.Text(self, height=10, state=Tkinter.DISABLED).pack(**button_opt)
+        
+        # define options for opening or saving a file
+        self.file_opt = options = {}
+        options['defaultextension'] = '' # couldn't figure out how this works
+        options['filetypes'] = [('all files', '.*'), ]
+        options['initialdir'] = 'C:\\'
+        options['initialfile'] = ''
+        options['parent'] = root
+        options['title'] = 'Seleccion de archivo...'
+        
+        self.output_filename = None
+        self.input_filename = None
 
-    Tkinter.Frame.__init__(self, root)
-    button_opt = {'fill': Tkconstants.BOTH, 'padx': 5, 'pady': 5}
-    
-    Tkinter.Label(self, text="Formato de entrada").pack(**button_opt)
-    Tkinter.Text(self, height=1).pack(**button_opt)
-    Tkinter.Button(self, text='Seleccion archivo de origen', command=self.select_input_file).pack(**button_opt)
-    
-    Tkinter.Label(self, text="Formato de salida").pack(**button_opt)
-    Tkinter.Text(self, height=1).pack(**button_opt)
-    Tkinter.Button(self, text='Seleccion archivo destino', command=self.select_output_file).pack(**button_opt)
-    
-    Tkinter.Button(self, text="Convertir", command=self.convertir).pack(**button_opt)
-    
-    self.status = Tkinter.Text(self, height=10, state=Tkinter.DISABLED).pack(**button_opt)
-    
-    # define options for opening or saving a file
-    self.file_opt = options = {}
-    options['defaultextension'] = '' # couldn't figure out how this works
-    options['filetypes'] = [('all files', '.*'), ]
-    options['initialdir'] = 'C:\\'
-    options['initialfile'] = ''
-    options['parent'] = root
-    options['title'] = 'Seleccion de archivo...'
-    
-    self.output_filename = None
-    self.input_filename = None
+    def render_status(self, text=""):
+        self.status.config(state=Tkinter.NORMAL)
+        self.status.delete(1.0, Tkinter.END)
+        self.status.insert(Tkinter.END, text)
+        self.status.config(state=Tkinter.DISABLED)
 
-  def render_status(self, text=""):
-    self.status.config(state=Tkinter.NORMAL)
-    self.status.delete(1.0, Tkinter.END)
-    self.status.insert(Tkinter.END, text)
-    self.status.config(state=Tkinter.DISABLED)
+    def select_input_file(self):
+        self.input_filename = tkFileDialog.askopenfile(mode='r', **self.file_opt)
+        self.render_status()
 
-  def select_input_file(self):
-    self.input_filename = tkFileDialog.askopenfile(mode='r', **self.file_opt)
-    self.render_status()
+    def select_output_file(self):
+        self.output_filename = tkFileDialog.asksaveasfilename(**self.file_opt)
+        self.render_status()
 
-  def select_output_file(self):
-    self.output_filename = tkFileDialog.asksaveasfilename(**self.file_opt)
-    self.render_status()
-
-  def convertir(self):
-    self.render_status("Convertido OK")
+    def convertir(self):
+        self.render_status("Convertido OK")
 
 if __name__ == '__main__':
-  root = Tkinter.Tk()
-  TkFileDialog(root).pack()
-  root.mainloop()
+    root = Tkinter.Tk()
+    TkFileDialog(root).pack()
+    root.mainloop()
+    
