@@ -106,10 +106,20 @@ class TkFileDialog(Tkinter.Frame):
 
     def select_input_file(self):
         self.input_filename = tkFileDialog.askopenfilename(**self.file_opt)
+        if self.input_filename is not None and self.input_filename.strip():
+            if len(self.get_input_format()) == 0:
+                input_format = self.input_filename.split(".")[-1]
+                self.input_format_widget.delete(1.0, Tkinter.END)
+                self.input_format_widget.insert(Tkinter.END, input_format)
         self.render_help()
 
     def select_output_file(self):
         self.output_filename = tkFileDialog.asksaveasfilename(**self.file_opt)
+        if self.output_filename is not None and self.output_filename.strip():
+            if len(self.get_input_format()) == 0:
+                output_format = self.output_filename.split(".")[-1]
+                self.output_format_widget.delete(1.0, Tkinter.END)
+                self.output_format_widget.insert(Tkinter.END, output_format)
         self.render_help()
     
     def get_input_format(self):
