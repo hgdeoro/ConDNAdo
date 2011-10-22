@@ -41,18 +41,18 @@ class TkFileDialog(Tkinter.Frame):
         Tkinter.Frame.__init__(self, root)
         button_opt = {'fill': Tkconstants.BOTH, 'padx': 5, 'pady': 5}
         
-        Tkinter.Label(self, text="(1) Formato de entrada").pack(**button_opt)
+        Tkinter.Button(self, text='(1) Seleccion archivo de origen', command=self.select_input_file).pack(**button_opt)
+
+        Tkinter.Label(self, text="(2) Formato de entrada").pack(**button_opt)
         self.input_format_widget = Tkinter.Text(self, height=1)
         self.input_format_widget.pack(**button_opt)
+
+        Tkinter.Button(self, text='(3) Seleccion archivo destino', command=self.select_output_file).pack(**button_opt)
         
-        Tkinter.Button(self, text='(2) Seleccion archivo de origen', command=self.select_input_file).pack(**button_opt)
-        
-        Tkinter.Label(self, text="(3) Formato de salida").pack(**button_opt)
+        Tkinter.Label(self, text="(4) Formato de salida").pack(**button_opt)
         
         self.output_format_widget = Tkinter.Text(self, height=1)
         self.output_format_widget.pack(**button_opt)
-        
-        Tkinter.Button(self, text='(4) Seleccion archivo destino', command=self.select_output_file).pack(**button_opt)
         
         Tkinter.Button(self, text="(5) Convertir", command=self.convertir).pack(**button_opt)
         
@@ -75,27 +75,27 @@ class TkFileDialog(Tkinter.Frame):
         lineas = []
         input_format = self.get_input_format()
         output_format = self.get_output_format()
+
+        if self.input_filename:
+            lineas.append("OK - Archivo de entrada: '%s'" % self.input_filename)
+        else:
+            lineas.append("FALTA -> Ingresar el archivo de entrada")
         
         if input_format:
             lineas.append("OK - Formato del archivo de entrada: '%s'" % input_format)
         else:
             lineas.append("FALTA -> Ingresar el formato del archivo de entrada")
 
-        if output_format:
-            lineas.append("OK - Formato del archivo de salida: '%s'" % output_format)
-        else:
-            lineas.append("FALTA -> Ingresar el formato del archivo de salida")
-        
-        if self.input_filename:
-            lineas.append("OK - Archivo de entrada: '%s'" % self.input_filename)
-        else:
-            lineas.append("FALTA -> Ingresar el archivo de entrada")
-        
         if self.output_filename:
             lineas.append("OK - Archivo de salida: '%s'" % self.output_filename)
         else:
             lineas.append("FALTA -> Ingresar el archivo de salida")
 
+        if output_format:
+            lineas.append("OK - Formato del archivo de salida: '%s'" % output_format)
+        else:
+            lineas.append("FALTA -> Ingresar el formato del archivo de salida")
+        
         self.render_status("\n".join(lineas))
 
     def render_status(self, text):
@@ -116,7 +116,7 @@ class TkFileDialog(Tkinter.Frame):
     def select_output_file(self):
         self.output_filename = tkFileDialog.asksaveasfilename(**self.file_opt)
         if self.output_filename is not None and self.output_filename.strip():
-            if len(self.get_input_format()) == 0:
+            if len(self.get_output_format()) == 0:
                 output_format = self.output_filename.split(".")[-1]
                 self.output_format_widget.delete(1.0, Tkinter.END)
                 self.output_format_widget.insert(Tkinter.END, output_format)
