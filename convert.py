@@ -25,43 +25,33 @@ class TkFileDialog(Tkinter.Frame):
 
     Tkinter.Frame.__init__(self, root)
     button_opt = {'fill': Tkconstants.BOTH, 'padx': 5, 'pady': 5}
-    Tkinter.Button(self, text='Seleccion archivo de origen', command=self.askopenfile).pack(**button_opt)
-    Tkinter.Button(self, text='Seleccion archivo destino', command=self.asksaveasfilename).pack(**button_opt)
-
+    Tkinter.Button(self, text='Seleccion archivo de origen', command=self.select_input_file).pack(**button_opt)
+    Tkinter.Button(self, text='Seleccion archivo destino', command=self.select_output_file).pack(**button_opt)
+    
     Tkinter.Button(self, text="Convertir", command=self.convertir).pack(**button_opt)
-
+    
     # define options for opening or saving a file
     self.file_opt = options = {}
     options['defaultextension'] = '' # couldn't figure out how this works
-    options['filetypes'] = [('all files', '.*'),]
+    options['filetypes'] = [('all files', '.*'), ]
     options['initialdir'] = 'C:\\'
     options['initialfile'] = ''
     options['parent'] = root
     options['title'] = 'Seleccion de archivo...'
+    
+    self.output_filename = None
+    self.input_filename = None
 
-  def askopenfile(self):
+  def select_input_file(self):
+    self.input_filename = tkFileDialog.askopenfile(mode='r', **self.file_opt)
 
-    """Returns an opened file in read mode."""
-
-    return tkFileDialog.askopenfile(mode='r', **self.file_opt)
-
-  def asksaveasfilename(self):
-
-    """Returns an opened file in write mode.
-    This time the dialog just returns a filename and the file is opened by your own code.
-    """
-
-    # get filename
-    filename = tkFileDialog.asksaveasfilename(**self.file_opt)
-
-    # open file on your own
-    if filename:
-      return open(filename, 'w')
+  def select_output_file(self):
+    self.output_filename = tkFileDialog.asksaveasfilename(**self.file_opt)
 
   def convertir(self):
       pass
 
-if __name__=='__main__':
+if __name__ == '__main__':
   root = Tkinter.Tk()
   TkFileDialog(root).pack()
   root.mainloop()
